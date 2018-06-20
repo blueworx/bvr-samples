@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!-- Licensed Materials - Property of Blueworx      -->
+<!--                                                -->
+<!-- SAMPLE                                         -->
+<!--                                                -->
+<!-- Copyright Blueworx. 2018. All Rights Reserved. -->
+
+<!DOCTYPE vxml PUBLIC "-//W3C//DTD VOICEXML 2.0//EN" "vxml20-1115.dtd">
+<vxml xmlns="http://www.w3.org/2001/vxml"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.w3.org/2001/vxml
+  http://www.w3.org/TR/voicexml20/vxml.xsd"
+  version="2.0">
+
+                                               
+     <form>
+
+         <block>
+
+	     <log>Machine vxml.</log>
+		 
+		 <audio src="machine.wav"/>
+
+	   </block>
+
+     </form>
+
+</vxml>

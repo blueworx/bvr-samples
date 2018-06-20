@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed Materials - Property of Blueworx      -->
+<!--                                                -->
+<!-- SAMPLE                                         -->
+<!--                                                -->
+<!-- Copyright Blueworx. 2018. All Rights Reserved. -->
+
+<!-- **************************************************** -->
+<!-- Showcases Various AMD and Fax detection combinations -->
+<!-- **************************************************** -->
+<ccxml version="1.0">
+	<!-- CallerID is used on outbound calls this application makes - you'll want to replace machineDNSHere if using it -->
+    <var name="CallerID" expr="'processevent@machineDNSHere'"/>
+	
+	<!-- Host is the IP of this machine, please change this to the correct value if using this document -->
+    <var name="Host" expr="'127.0.0.1'"/>
+	
+	<!-- These variables are used by the application, but you don't need to edit their values to make it work :) -->
+	<var name="run_using_createsession" expr="'true'"/>
+    <var name="call_state" expr="'starting'"/>
+    <var name="humandialog" expr="'human.vxml'"/>
+    <var name="machinedialog" expr="'machine.vxml'"/>
+    <var name="machinedialogID"/>
+    <var name="connID"/>
+    <var name="humandialogID"/>
+	
+    <eventprocessor statevariable="call_state">
+        <transition event="ccxml.loaded">
+            <log expr="'amd_fax.ccxml [ccxml.loaded] on session ' + session.id"/>
+            <log expr="'amd_fax.ccxml [' + event$.name + '] run_using_createsession = ' + run_using_createsession"/>
+            <if cond="run_using_createsession == 'true'">
+                <log expr="'amd_fax.ccxml [' + event$.name + '] Simple application to leave Message after a beep or at end of answer machine message'"/>
+                <dialogprepare src="humandialog"/>
+                <assign name="call_state" expr="'prepping'"/>
+                <log expr="'amd_fax.ccxml [' + event$.name + '] Human dialog being prepared'"/>
+                
+                <!-- set up AMD settings, leave all timers as defaults -->
+                <var name="hints1" expr="new Object()"/>
+                <assign name="hints1.bvr_callprogress" expr="new Object()"/>
+                <assign name="hints1.bvr_callprogress.events" expr="'amd_unknown, amd_potentialmachine, amd_machine, amd_potentialbeep, amd_beep, amd_human'"/>
+                <assign name="hints1.bvr_callprogress.terminationevents" expr="'amd_unknown, amd_machine, amd_human'"/>
+                <assign name="hints1.bvr_callprogress.amdtime" expr="'8s'"/>
+                <assign name="hints1.bvr_callprogress.enabled" expr="'AMD,fax'"/>
+
+                <var name="calledparty"/>
+                <if cond="session.values.destination !== undefined">
+                   <log expr="'amd_fax.ccxml [' + event$.name + '] destination = ' + session.values.destination"/>
+                   <assign name="calledparty" expr="session.values.destination"/>
+                <else/>
+                  <log expr="'amd_fax.ccxml [' + event$.name + '] event$.ipaddr : undefined, using host = ' + Host"/>
+                  <assign name="calledparty" expr="'sip:1001@' + Host"/>
+                </if>
+                <log expr="'amd_fax.ccxml [' + event$.name + '] createcall to ' + calledparty"/>
+                <createcall dest="calledparty"  hints="hints1"/>
+            </if>
+        </transition>
+
+		<!-- This event will not be triggered by BVR naturally or by any of the other transitions in this CCXML document -->
+		<!-- It is intended to allow you to manually or automatically send an http request to the basichttp processor of this server to trigger a call -->
+        <transition event="MessageAfterBeep" name="event$">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] Simple application to leave Message after a beep or at end of answer machine message'"/>
+            <dialogprepare src="humandialog"/>
+            <assign name="call_state" expr="'prepping'"/>
+            <log expr="'amd_fax.ccxml [' + event$.name + '] Human dialog being prepared'"/>
+            
+            <!-- set up AMD settings, leave all timers as defaults -->
+            <var name="hints1" expr="new Object()"/>
+            <assign name="hints1.bvr_callprogress" expr="new Object()"/>
+            <assign name="hints1.bvr_callprogress.events" expr="'amd_unknown, amd_potentialmachine, amd_machine, amd_potentialbeep, amd_beep, amd_human'"/>
+            <assign name="hints1.bvr_callprogress.terminationevents" expr="'amd_unknown, amd_machine, amd_human'"/>
+            <assign name="hints1.bvr_callprogress.amdtime" expr="'3s'"/>
+
+            <var name="callip"/>
+            <if cond="event$.ipaddr !== undefined">
+                <log expr="'amd_fax.ccxml [' + event$.name + '] name.ipaddr = ' + event$.ipaddr"/>
+                <assign name="callip" expr="'sip:1001@' + event$.ipaddr"/>
+                <else/>
+                <log expr="'amd_fax.ccxml [' + event$.name + '] event$.ipaddr : undefined, using host = ' + Host"/>
+                <assign name="callip" expr="'sip:1001@' + Host"/>
+            </if>
+            <log expr="'amd_fax.ccxml [' + event$.name + '] createcall to ' + callip"/>
+            <createcall dest="callip" callerid="CallerID" hints="hints1"/>
+        </transition>
+
+        <transition event="connection.alerting">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ',state = ' + call_state"/>
+            <accept/>
+        </transition>
+
+        <transition event="connection.disconnected">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ',state = ' + call_state"/>
+            <if cond="run_using_createsession == 'true'">
+                <exit/>
+            </if>
+        </transition>
+    
+        <!-- Deal with event when human dialog has completed preparation prior to connection -->
+        <transition event="connection.connected" state="prepped">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ',state = ' + call_state"/>
+            <log expr="'amd_fax.ccxml [' + event$.name + '] starting dialog = ' + humandialog"/>
+            <!--  assume we have a human and start the human dialog -->
+            <dialogstart prepareddialogid="humandialogID" connectionid="event$.connectionid"/>
+            <assign name="connID" expr="event$.connectionid"/>
+            <log expr="'amd_fax.ccxml [' + event$.name + '] connection ID = ' + connID"/>
+            <assign name="call_state" expr="'starting'"/>
+        </transition>
+
+        <!-- Deal with event when human dialog has not completed preparation prior to connection -->
+        <transition event="connection.connected">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ',state = ' + call_state"/>
+            <assign name="call_state" expr="'connected'"/>
+        </transition>
+
+        <!-- Deal with event when human dialog has completed preparation prior to connection -->
+        <transition event="dialog.prepared" state="prepping">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <assign name="humandialogID" expr="event$.dialogid"/>
+            <assign name="call_state" expr="'prepped'"/>
+        </transition>
+
+        <!-- Deal with event when human dialog has completed preparation after connection -->
+        <transition event="dialog.prepared" state="connected">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <assign name="humandialogID" expr="event$.dialogid"/>
+            <dialogstart prepareddialogid="humandialogID" connectionid="event$.connectionid"/>
+            <assign name="call_state" expr="'starting'"/>
+        </transition>
+
+        <!-- Deal with event when human dialog has started -->
+        <transition event="dialog.started" state="starting">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <assign name="call_state" expr="'started'"/>
+        </transition>
+
+        <!-- Deal with unknown AMD event -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_unknown'">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+        </transition>
+
+        <!-- Deal with human AMD event -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_human'">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+        </transition>
+
+
+        <!-- Deal with event when may be machine/beep and human dialog is playing, prepare machine dialog -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_potentialbeep' || event$.type == 'amd_potentialmachine'" state="started">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+            <dialogprepare src="machinedialog"/>
+            <assign name="call_state" expr="'mprepping'"/>
+        </transition>
+
+        <!-- Ignore event when may be machine/beep and human dialog is playing, but state not started -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_potentialbeep' || event$.type == 'amd_potentialmachine'">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+        </transition>
+      
+        <!-- Deal with event when machine/beep and machine dialog is prepared -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_machine' || event$.type == 'amd_beep'" state="mprepped">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+            <dialogterminate dialogid="humandialogID"/>
+            <assign name="call_state" expr="'terminate'"/>
+        </transition>
+
+        <!-- Deal with event when machine/beep and machine dialog is not being prepared -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_machine' || event$.type == 'amd_beep'" state="mprepping">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+            <assign name="call_state" expr="'terminate'"/>
+        </transition>
+
+        <!-- Deal with event when machine/beep and machine dialog is not being prepared -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_machine' || event$.type == 'amd_beep'" state="started">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+            <dialogprepare src="machinedialog"/>
+            <assign name="call_state" expr="'terminate'"/>
+        </transition>
+
+        <!-- Deal with event when machine/beep and machine dialog is not being prepared -->
+        <transition event="bvr.callprogress" cond="event$.type == 'amd_machine' || event$.type == 'amd_beep'">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+        </transition>
+
+        <transition event="bvr.callprogress" cond="event$.type == 'fax'">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ', fax machine detected!'"/>
+			<!-- Here you'd put in yout handler for a fax machine being detected on the other end of the line -->
+        </transition>
+
+        <transition event="bvr.callprogress">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] ' + event$.type + ' for connection ' + event$.connectionid  + ',state = ' + call_state"/>
+        </transition>
+     
+        <!-- Deal with event when machine dialog has been prepared prior to confirmed machine -->
+        <transition event="dialog.prepared" state="mprepping">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <assign name="machinedialogID" expr="event$.dialogid"/>
+            <assign name="call_state" expr="'mprepped'"/>
+        </transition>
+
+        <!-- Deal with event when machine dialog has been prepared after machine/beep has been identifed -->
+        <transition event="dialog.prepared" state="terminate">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <assign name="machinedialogID" expr="event$.dialogid"/>
+            <dialogterminate dialogid="machinedialogID"/>
+        </transition>
+   
+        <!-- Deal with event when machine dialog has started -->
+        <transition event="dialog.started" state="terminate">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <assign name="call_state" expr="'mstarted'"/>
+        </transition>
+
+        <!-- Deal with event when human dialog has terminated because machine detected -->
+        <transition event="dialog.exit" state="terminate">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+            <log expr="'amd_fax.ccxml [' + event$.name + '] connection ID = ' + connID"/>
+            <dialogstart prepareddialogid="machinedialogID" connectionid="connID"/>
+        </transition>
+
+        <!-- Deal with event when human dialog has terminated -->
+        <transition event="dialog.exit">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ' with dialog ' + event$.dialogid + ',state = ' + call_state"/>
+        </transition>
+  
+        <transition event="error.*">
+            <log expr="'amd_fax.ccxml [error.*] with name ' + event$.name + ' was triggered, reason was ' + event$.reason + ' trigger was ' + event$.trigger + ', connection was ' + event$.connectionid + ',state = ' + call_state"/>
+        </transition>
+
+        <transition event="connection.*">
+            <log expr="'amd_fax.ccxml [' + event$.name + '] for connection ' + event$.connectionid + ',state = ' + call_state"/>
+        </transition>
+        <transition event="*">
+            <log expr="'amd_fax.ccxml [*] caught an event, named ' + event$.name + ' with reason ' + event$.reason + ', state ' + call_state"/>
+        </transition>
+    
+    </eventprocessor>
+</ccxml>
