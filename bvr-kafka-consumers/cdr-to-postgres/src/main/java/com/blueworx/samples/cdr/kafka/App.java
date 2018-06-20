@@ -34,13 +34,13 @@ public class App {
     private static final int BATCH_COMMIT_FREQUENCY = 1;
 
     // Default Apache Kafka broker connection information
-    private static final String DEFAULT_KAFKA_BROKERS = "mortymarkh2.hursley.blueworx.com:9092";
+    private static final String DEFAULT_KAFKA_BROKERS = "localhost:9092";
     private static final String DEFAULT_KAFKA_CONSUMER_GROUP_ID = "BWCDRConsumerSample";
     private static final String DEFAULT_KAFKA_TOPIC = "blueworx.cdr";
     private static final int DEFAULT_KAFKA_POLL_RATE = 1000;
 
     // Default PostgreSQL database connection information
-    private static final String DEFAULT_POSTGRES_URL = "jdbc:postgresql://mortymarkh2.hursley.blueworx.com:5432/bw_sample_cdr";
+    private static final String DEFAULT_POSTGRES_URL = "jdbc:postgresql://localhost:5432/bw_sample_cdr";
     private static final String DEFAULT_POSTGRES_USERNAME = "bwsamples";
     private static final String DEFAULT_POSTGRES_PASSWORD = "md5bfd4102f654bb7059d11950eccb7b522";
 
