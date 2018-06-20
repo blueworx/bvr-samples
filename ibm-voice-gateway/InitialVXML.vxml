@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE vxml PUBLIC "-//W3C//DTD VOICEXML 2.0//EN" "vxml20-1115.dtd">
+
+<!-- Licensed Materials - Property of Blueworx      -->
+<!--                                                -->
+<!-- SAMPLE                                         -->
+<!--                                                -->
+<!-- Copyright Blueworx. 2018. All Rights Reserved. -->
+
+<vxml version="2.0" xml:lang="en-US" xmlns="http://www.w3.org/2001/vxml">
+
+<form id="Welcome">
+    <!-- This form plays the Welcome wav file -->
+    <block>
+         <audio src="Prompt.wav" />
+    </block>
+</form>
+
+</vxml>

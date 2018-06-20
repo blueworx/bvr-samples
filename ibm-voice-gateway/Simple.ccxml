@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Licensed Materials - Property of Blueworx      -->
+<!--                                                -->
+<!-- SAMPLE                                         -->
+<!--                                                -->
+<!-- Copyright Blueworx. 2018. All Rights Reserved. -->
+<!--                                                -->
+<!-- This sample application demonstrates how to    -->
+<!-- invoke IBM Voice Gateway (and IBM Watson       -->
+<!-- Conversation) from a CCXML application hosted  -->
+<!-- in Blueworx Voice Response.                    -->
+
+<ccxml version="1.0">
+    <meta http-equiv="Cache-Control" content="no-cache"/>
+    
+    <!-- Change this variable to the URI of the IBM Voice Gateway application --> 
+    <!-- configured to invoke IBM Watson Conversation.                        -->
+    <var name="voiceGatewayURI" expr="'sip:user@example.com:5060'"/>
+
+    <eventprocessor>
+    
+        <!-- Initiating call and application -->
+    
+        <transition event="ccxml.loaded" name="evt">
+            <log expr="'INFO: [ccxml.loaded] event. CCXML application loaded'"/>
+        </transition>
+        
+        <transition event="connection.alerting" name="evt">
+            <log expr="'INFO: [connection.alerting] event. Starting call'"/>
+            <accept connectionid="evt.connectionid"/>
+        </transition>
+        
+        <!-- Main application flow -->
+        
+        <transition event="connection.connected" name="evt">
+            <log expr="'INFO: [connection.connected] event. Invoking IBM Voice Gateway application'"/>
+            
+            <!-- Invoke IBM Voice Gateway application                                                                              -->
+            <!--                                                                                                                   -->
+            <!-- Note: src attribute is the URI of the IBM Voice Gateway application configured to invoke IBM Watson Conversation. -->
+			<!--           This example uses the ibm-voice-gateway-uri variable, which is defined at the top of this file.         -->
+            <!--       type attribute must be set to application/ibm-voice-gateway to invoke IBM Voice Gateway                     -->
+            
+            <dialogstart src="voiceGatewayURI" type="'application/ibm-voice-gateway'" connectionid="evt.connectionid"/>
+        </transition>
+        
+        <transition event="dialog.started" name="evt">
+            <log expr="'INFO: [dialog.started] event - dialogid: ' + evt.dialogid"/>
+        </transition>
+
+        <transition event="dialog.exit" name="evt">
+            <log expr="'INFO: [dialog.exit] event'"/>
+            
+            <!-- If these lines are traced, the IBM Watson Conversation application did not request a transfer -->
+            
+            <log expr="'INFO: [dialog.exit] Call returned from IBM Voice Gateway'"/>
+            
+            <!-- Disconnect call -->
+            
+            <disconnect/>
+        </transition>
+        
+        <!-- connection.disconnect events -->
+
+        <transition event="connection.disconnected" name="evt" cond="evt.reason=='near_end_disconnect'">
+            <log expr="'INFO: [connection.disconnected] Near end disconnect'"/>
+            <exit/>
+        </transition>
+
+        <transition event="connection.disconnected" name="evt" cond="evt.reason=='far_end_disconnect'">
+            <log expr="'INFO: [connection.disconnected] Far end disconnect'"/>
+            <exit/>
+        </transition>
+
+        <transition event="connection.disconnected" name="evt" >
+            <log expr="'INFO: [connection.disconnected] Generic disconnect'"/>
+            <exit/>
+        </transition>
+        
+        <!-- ERROR transition events -->
+
+        <transition event="error.*" name="evt">
+            <log expr="'ERROR: [' + evt.name + '] occurred. Reason: ' + evt.reason"/>
+        </transition>
+
+        <transition event="*" name="evt">
+            <log expr="'ERROR: [' + evt.name + '] Unknown event'"/>
+        </transition>
+    </eventprocessor>
+</ccxml>
