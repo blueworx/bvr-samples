@@ -15,3 +15,5 @@ Usage instructions for each sample can either be found in:
 
 ## License
 This project / repository is licensed under [Apache License Version 2.0](LICENSE)
+
+**Note**: All source code files contain individual copyright statements, which, in accordance with the license need to be retained in any derivative works (clause 4c)
