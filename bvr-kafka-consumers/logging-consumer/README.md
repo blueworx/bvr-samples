@@ -13,7 +13,7 @@ The app polls the kafka topics blueworx.application, blueworx.error and blueworx
 As you can probably guess from the above, the **blueworx.error** and **blueworx.trace** streams use the same code handler class.
 
 ## Setting Properties for the Sample
-The code expects to run such that config/logging-consumer.properties is valid relevent to the current directory. All properties have default values if not set, but you will at minimum need to specify bootstrap.servers. For more information on Apache Kafka properties, please see [the Apache Kafka Documentation.](https://kafka.apache.org/documentation/#newconsumerconfigs)
+The code expects to run such that config/logging-consumer.properties is valid relevant to the current directory. All properties have default values if not set, but you will at minimum need to specify bootstrap.servers. For more information on Apache Kafka properties, please see [the Apache Kafka Documentation.](https://kafka.apache.org/documentation/#newconsumerconfigs)
 The following properties can be set in the logging-consumer.properties file to alter behaviour of the existing code or are otherwise set in the sample code:
 
 **output_directory** - the output directory to write all the files into. 
